@@ -201,11 +201,6 @@ export default function HomePage() {
           </div>
           <div className="text-sm text-slate-500">
             <p>&copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.</p>
-            <div className="flex gap-6 justify-center mt-4">
-              <Link href="#" className="hover:text-blue-400 transition-colors">Privacy</Link>
-              <Link href="#" className="hover:text-blue-400 transition-colors">Terms</Link>
-              <Link href="#" className="hover:text-blue-400 transition-colors">Contact</Link>
-            </div>
           </div>
         </div>
       </footer>
