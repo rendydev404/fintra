@@ -3,6 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
 
+import { GlobalNotifications } from "@/components/global-notifications";
+import { UserPresenceTracker } from "@/components/user-presence";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -30,6 +33,8 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <UserPresenceTracker />
+        <GlobalNotifications />
         {children}
       </body>
     </html>
