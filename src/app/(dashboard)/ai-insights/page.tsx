@@ -23,6 +23,7 @@ import {
   Target,
   Shield,
 } from 'lucide-react';
+import { PredictiveChart } from "@/components/ai-insights/predictive-chart";
 import type { AIInsight, FinancialHealthScore } from '@/types';
 
 export default function AIInsightsPage() {
@@ -424,6 +425,8 @@ export default function AIInsightsPage() {
           )}
         </CardContent>
       </Card>
+
+      <PredictiveChart />
 
       {/* Insights */}
       <div>

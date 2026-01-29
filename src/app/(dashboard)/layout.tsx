@@ -6,8 +6,11 @@ import { useAppStore } from '@/stores/app-store';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Toaster } from '@/components/ui/sonner';
+import { GlobalNotifications } from "@/components/global-notifications";
 import { GuidedTour } from '@/components/onboarding/guided-tour';
 import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from '@/lib/constants';
+import { AIAssistantProvider } from "@/components/ai-assistant/ai-assistant-provider";
+import { ChatWidget } from "@/components/ai-assistant/chat-widget";
 import type { User, Account, Category, Transaction, Budget, Goal, Subscription } from '@/types';
 
 export default function DashboardLayout({
@@ -197,6 +200,10 @@ export default function DashboardLayout({
         onClose={handleOnboardingClose}
         onComplete={handleOnboardingComplete}
       />
+      <GlobalNotifications />
+      <AIAssistantProvider>
+        <ChatWidget />
+      </AIAssistantProvider>
     </div>
   );
 }

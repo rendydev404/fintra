@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { X } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, CheckCircle, Info, XCircle, Terminal } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 type Notification = {
   id: string;
@@ -14,7 +21,7 @@ type Notification = {
 
 export function GlobalNotifications() {
   const [notification, setNotification] = useState<Notification | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,7 +42,7 @@ export function GlobalNotifications() {
         const dismissed = localStorage.getItem(`dismissed_notification_${data.id}`);
         if (!dismissed) {
           setNotification(data);
-          setIsVisible(true);
+          setIsOpen(true);
         }
       }
     };
@@ -56,7 +63,7 @@ export function GlobalNotifications() {
         (payload: any) => {
           const newNotif = payload.new as Notification;
           setNotification(newNotif);
-          setIsVisible(true);
+          setIsOpen(true);
         }
       )
       .subscribe();
@@ -66,48 +73,77 @@ export function GlobalNotifications() {
     };
   }, []);
 
-  const dismiss = () => {
+  const handleDismiss = () => {
     if (notification) {
-      setIsVisible(false);
+      setIsOpen(false);
       localStorage.setItem(`dismissed_notification_${notification.id}`, "true");
     }
   };
 
-  if (!notification || !isVisible) return null;
+  if (!notification) return null;
 
-  const getColors = (type: string) => {
+  const getTypeStyles = (type: string) => {
     switch (type) {
       case "warning":
-        return "bg-yellow-500 border-yellow-600 text-white";
+        return {
+          icon: <AlertTriangle className="h-12 w-12 text-amber-500 animate-pulse" />,
+          titleColor: "text-amber-500",
+          borderColor: "border-amber-500/20",
+          glowColor: "shadow-amber-500/10",
+        };
       case "error":
-        return "bg-red-500 border-red-600 text-white";
+        return {
+          icon: <XCircle className="h-12 w-12 text-red-500 animate-bounce" />,
+          titleColor: "text-red-500",
+          borderColor: "border-red-500/20",
+          glowColor: "shadow-red-500/10",
+        };
       case "success":
-        return "bg-green-500 border-green-600 text-white";
+        return {
+          icon: <CheckCircle className="h-12 w-12 text-emerald-500 animate-bounce" />,
+          titleColor: "text-emerald-500",
+          borderColor: "border-emerald-500/20",
+          glowColor: "shadow-emerald-500/10",
+        };
       default:
-        return "bg-blue-600 border-blue-700 text-white";
+        return {
+          icon: <Info className="h-12 w-12 text-blue-500 animate-pulse" />,
+          titleColor: "text-blue-500",
+          borderColor: "border-blue-500/20",
+          glowColor: "shadow-blue-500/10",
+        };
     }
   };
 
+  const styles = getTypeStyles(notification.type);
+
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -100, opacity: 0 }}
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md pointer-events-none"
-      >
-        <div className={`pointer-events-auto shadow-lg rounded-xl p-4 border flex items-start gap-3 backdrop-blur-md bg-opacity-95 ${getColors(notification.type)}`}>
-          <div className="flex-1 text-sm font-medium leading-relaxed">
-            {notification.message}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className={`sm:max-w-md border-2 ${styles.borderColor} shadow-2xl ${styles.glowColor} backdrop-blur-3xl`}>
+        <DialogHeader className="space-y-4 items-center text-center">
+          <div className="rounded-full bg-background/50 p-4 ring-1 ring-border shadow-sm">
+            {styles.icon}
           </div>
-          <button
-            onClick={dismiss}
-            className="text-white/80 hover:text-white transition-colors"
+          <div className="space-y-2">
+            <DialogTitle className={`text-2xl font-bold flex items-center justify-center gap-2`}>
+               <Terminal className="h-5 w-5 opacity-70" />
+               Developer Message
+            </DialogTitle>
+            <DialogDescription className="text-base text-foreground font-medium pt-2 leading-relaxed">
+              {notification.message}
+            </DialogDescription>
+          </div>
+        </DialogHeader>
+        <div className="flex flex-col gap-2 pt-6">
+          <Button 
+            className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold" 
+            size="lg"
+            onClick={handleDismiss}
           >
-            <X className="h-5 w-5" />
-          </button>
+            I Understand
+          </Button>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </DialogContent>
+    </Dialog>
   );
 }
