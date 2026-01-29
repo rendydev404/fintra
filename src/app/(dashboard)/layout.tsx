@@ -77,7 +77,11 @@ export default function DashboardLayout({
           .order('name');
 
         if (categories && categories.length > 0) {
-          setCategories(categories as Category[]);
+          // Fix duplicate categories issue (likely caused by double seeding)
+          const uniqueCategories = Array.from(
+            new Map(categories.map(item => [`${item.name}-${item.type}`, item])).values()
+          );
+          setCategories(uniqueCategories as Category[]);
         } else {
           // Seed default categories if none exist
           const defaultCategories = [

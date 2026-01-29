@@ -40,7 +40,7 @@ export async function createBudgetAction(data: { name: string; amount: number; c
     const startDate = startOfMonth(now);
     const endDate = endOfMonth(now);
 
-    const { error } = await supabase.from('budgets').insert({
+    const { data: newBudget, error } = await supabase.from('budgets').insert({
       user_id: user.id,
       category_id: categoryId,
       amount: data.amount,
@@ -49,13 +49,13 @@ export async function createBudgetAction(data: { name: string; amount: number; c
       start_date: format(startDate, 'yyyy-MM-dd'),
       end_date: format(endDate, 'yyyy-MM-dd'),
       rollover: false
-    });
+    }).select('*, category:categories(*)').single();
 
     if (error) throw error;
 
     revalidatePath('/budgets');
     revalidatePath('/dashboard');
-    return { success: true };
+    return { success: true, data: newBudget };
 
   } catch (error: any) {
     console.error("Create Budget Error:", error);
@@ -70,7 +70,7 @@ export async function createGoalAction(data: { name: string; amount: number }) {
   if (!user) return { success: false, error: "Unauthorized" };
 
   try {
-    const { error } = await supabase.from('goals').insert({
+    const { data: newGoal, error } = await supabase.from('goals').insert({
       user_id: user.id,
       name: data.name,
       target_amount: data.amount,
@@ -79,13 +79,13 @@ export async function createGoalAction(data: { name: string; amount: number }) {
       icon: 'target',
       color: '#8b5cf6', 
       status: 'active'
-    });
+    }).select('*').single();
 
     if (error) throw error;
 
     revalidatePath('/goals');
     revalidatePath('/dashboard');
-    return { success: true };
+    return { success: true, data: newGoal };
 
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -99,7 +99,7 @@ export async function createSubscriptionAction(data: { name: string; amount: num
   if (!user) return { success: false, error: "Unauthorized" };
 
   try {
-    const { error } = await supabase.from('subscriptions').insert({
+    const { data: newSubscription, error } = await supabase.from('subscriptions').insert({
       user_id: user.id,
       name: data.name,
       amount: data.amount,
@@ -107,13 +107,13 @@ export async function createSubscriptionAction(data: { name: string; amount: num
       next_billing_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
       is_active: true,
       notes: 'Created by AI Assistant'
-    });
+    }).select('*, category:categories(*), account:accounts(*)').single();
 
     if (error) throw error;
 
     revalidatePath('/subscriptions');
     revalidatePath('/dashboard');
-    return { success: true };
+    return { success: true, data: newSubscription };
 
   } catch (error: any) {
     return { success: false, error: error.message };

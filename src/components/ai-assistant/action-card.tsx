@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, X, Wallet, Target, CreditCard, Loader2 } from "lucide-react";
+import { Check, X, Wallet, Target, CreditCard, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,8 @@ import { useFormatCurrency } from "@/hooks/use-format-currency";
 import { ActionData } from "./ai-assistant-provider";
 import { createBudgetAction, createGoalAction, createSubscriptionAction } from "@/actions/ai";
 import { toast } from "sonner";
+import { useAppStore } from "@/stores/app-store";
+import { useRouter } from "next/navigation";
 
 interface ActionCardProps {
   action: ActionData;
@@ -18,6 +20,9 @@ export function ActionCard({ action, onConfirm, onCancel }: ActionCardProps) {
   const formatCurrency = useFormatCurrency();
   const { type, data, status } = action;
   const [isLoading, setIsLoading] = useState(false);
+  const [resultPath, setResultPath] = useState<string | null>(null);
+  const { addBudget, addGoal, addSubscription } = useAppStore();
+  const router = useRouter();
 
   if (status !== "pending") return null;
 
@@ -28,15 +33,27 @@ export function ActionCard({ action, onConfirm, onCancel }: ActionCardProps) {
     try {
       if (type === 'budget') {
         result = await createBudgetAction(data);
+        if (result.success && result.data) {
+          addBudget(result.data);
+          setResultPath('/budgets');
+        }
       } else if (type === 'goal') {
         result = await createGoalAction(data);
+        if (result.success && result.data) {
+          addGoal(result.data);
+          setResultPath('/goals');
+        }
       } else if (type === 'subscription') {
         result = await createSubscriptionAction(data);
+        if (result.success && result.data) {
+          addSubscription(result.data);
+          setResultPath('/subscriptions');
+        }
       }
 
       if (result?.success) {
         toast.success(`Berhasil membuat ${type}!`);
-        onConfirm();
+        // onConfirm(); // Don't call this, otherwise the card disappears (status changes to confirmed)
       } else {
         toast.error(`Gagal: ${result?.error || 'Unknown error'}`);
       }
@@ -62,6 +79,30 @@ export function ActionCard({ action, onConfirm, onCancel }: ActionCardProps) {
       case "subscription": return "Catat Langganan";
     }
   };
+
+  if (resultPath) {
+    return (
+      <Card className="w-full border-2 border-green-500/20 shadow-lg bg-background/95">
+        <CardContent className="p-4 flex flex-col items-center text-center space-y-3">
+          <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <Check className="h-5 w-5 text-green-600" />
+          </div>
+          <div>
+            <p className="font-semibold">Berhasil Dibuat!</p>
+            <p className="text-xs text-muted-foreground">Item telah ditambahkan ke daftar.</p>
+          </div>
+          <Button 
+            size="sm" 
+            className="w-full gap-2"
+            onClick={() => router.push(resultPath)}
+          >
+            Lihat {type === 'budget' ? 'Anggaran' : type === 'goal' ? 'Target' : 'Langganan'}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full border-2 border-primary/20 shadow-lg bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

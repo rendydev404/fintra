@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/app-store';
 import { createClient } from '@/lib/supabase/client';
+import { resetDataAction } from '@/actions/settings';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +68,11 @@ export default function SettingsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  
+  // Reset Data State
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [shouldDeleteAllData, setShouldDeleteAllData] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -441,6 +448,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetData = async () => {
+    setIsResetting(true);
+    try {
+      const result = await resetDataAction(shouldDeleteAllData);
+      if (result.success) {
+        toast.success('Data berhasil di-reset!');
+        setIsResetDialogOpen(false);
+        // Reload to reflect changes
+        window.location.reload();
+      } else {
+        toast.error(`Gagal: ${result.error}`);
+      }
+    } catch (error) {
+      toast.error('Terjadi kesalahan sistem.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'HAPUS AKUN SAYA') {
       toast.error('Teks konfirmasi tidak cocok.');
@@ -762,6 +788,97 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Danger Zone */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Zona Bahaya
+          </CardTitle>
+          <CardDescription>Tindakan ini tidak dapat dibatalkan</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+            <div>
+              <h4 className="font-medium text-destructive">Reset Saldo & Data</h4>
+              <p className="text-xs text-muted-foreground">
+                Reset saldo akun ke 0 dan opsi hapus data
+              </p>
+            </div>
+            <Button variant="destructive" onClick={() => setIsResetDialogOpen(true)}>
+              Reset Data
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+            <div>
+              <h4 className="font-medium text-destructive">Hapus Akun</h4>
+              <p className="text-xs text-muted-foreground">
+                Hapus akun dan semua data secara permanen
+              </p>
+            </div>
+            <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+              Hapus Akun
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Reset Dialog */}
+      <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Data Keuangan</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin mereset data keuangan Anda? Tindakan ini akan mengubah saldo semua akun menjadi 0.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="flex items-center space-x-2 bg-muted/50 p-3 rounded-md border">
+              <Checkbox 
+                id="deleteAll" 
+                checked={shouldDeleteAllData}
+                onCheckedChange={(checked) => setShouldDeleteAllData(checked as boolean)}
+              />
+              <label
+                htmlFor="deleteAll"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Hapus juga semua riwayat transaksi, anggaran, target, dan langganan
+              </label>
+            </div>
+            
+            {shouldDeleteAllData && (
+              <div className="text-xs text-destructive bg-destructive/10 p-2 rounded flex items-center gap-2">
+                <AlertTriangle className="h-3 w-3" />
+                <span>Peringatan: Semua data yang dihapus tidak dapat dikembalikan!</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResetDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleResetData}
+              disabled={isResetting}
+            >
+              {isResetting ? (
+                 <>
+                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                   Memproses...
+                 </>
+              ) : (
+                'Reset Sekarang'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Password Change Dialog */}
       <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
         <DialogContent>
@@ -810,25 +927,6 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Danger Zone */}
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Zona Berbahaya
-          </CardTitle>
-          <CardDescription>Tindakan yang tidak dapat dibatalkan</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
-            Hapus Akun
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Menghapus akun akan menghapus semua data Anda secara permanen.
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Currency Conversion Dialog */}
       <AlertDialog open={isCurrencyDialogOpen} onOpenChange={(open) => {
@@ -945,4 +1043,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
